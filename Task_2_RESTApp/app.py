@@ -58,5 +58,15 @@ def get_sports_slug(slug):
     else:
         return jsonify({"error": "Sport not found"}), 404
 
+@app.route("/sports/<int:sport_id>", methods=["PUT"])
+def update_sport(sport_id):
+    data = request.json
+    conn = get_db()
+    cur = conn.cursor()
+    cur.execute("UPDATE sports SET name = ?, slug = ?, active = ? WHERE id = ?",
+                (data['name'], data['slug'], data['active'], sport_id))
+    conn.commit()
+    return jsonify({"updated": cur.rowcount})
+
 if __name__ == "__main__":
     app.run(debug=True,port=8000)
