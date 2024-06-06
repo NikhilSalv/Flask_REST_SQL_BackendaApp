@@ -44,5 +44,19 @@ def get_sports():
     sports = cur.fetchall()
     return jsonify([dict(row) for row in sports])
 
+
+@app.route('/sports/<string:slug>', methods=['GET'])
+def get_sports_slug(slug):
+    conn = get_db()
+    cur = conn.cursor()
+    cur.execute("SELECT * FROM sports WHERE slug= ?", (slug,))
+
+    sport = cur.fetchone()
+
+    if sport:
+        return jsonify(dict(sport))
+    else:
+        return jsonify({"error": "Sport not found"}), 404
+
 if __name__ == "__main__":
     app.run(debug=True,port=8000)
