@@ -160,7 +160,7 @@ def update_event(event_id):
         return jsonify({"error": "Event not found"}), 404
 
     # Prepare the updated values, using the existing ones if not provided
-    print(event["type"] + "_____")
+
     name = data.get('name', event['name'])
     slug = data.get('slug', event['slug'])
     active = data.get('active', event['active'])
@@ -178,6 +178,82 @@ def update_event(event_id):
 
     return jsonify({"updated": cur.rowcount})
 
+
+"""
+SELECTION APIs
+"""
+@app.route('/selections', methods=['POST'])
+def create_selection():
+    data = request.json
+    conn = get_db()
+    cur = conn.cursor()
+    cur.execute("""INSERT INTO selections (name, event_id, price, active, outcome)
+                   VALUES (?, ?, ?, ?, ?)""",
+                (data['name'], data['event_id'], data['price'], data['active'], data['outcome']))
+    conn.commit()
+    return jsonify({"id": cur.lastrowid}), 201
+
+
+@app.route('/selections', methods=['GET'])
+def get_selections():
+    query = "SELECT * FROM selections"
+    filters = []
+    params = []
+
+    if 'name' in request.args:
+        filters.append("name LIKE ?")
+        params.append(f"%{request.args['name']}%")
+    
+    if 'active' in request.args:
+        filters.append("active = ?")
+        params.append(request.args['active'])
+    
+    if 'outcome' in request.args:
+        filters.append("outcome = ?")
+        params.append(request.args['outcome'])
+    
+    if 'event_id' in request.args:
+        filters.append("event_id = ?")
+        params.append(request.args['event_id'])
+    
+    if filters:
+        query += " WHERE " + " AND ".join(filters)
+    
+    conn = get_db()
+    cur = conn.cursor()
+    cur.execute(query, params)
+    selections = cur.fetchall()
+    return jsonify([dict(row) for row in selections])
+
+@app.route('/selections/<int:selection_id>', methods=['PUT'])
+def update_selection(selection_id):
+    data = request.json
+    conn = get_db()
+    cur = conn.cursor()
+    cur.execute("SELECT * FROM selections WHERE id = ?", (selection_id,))
+    selection = cur.fetchone()
+
+    if not selection:
+        return jsonify({"error": "Selection not found"}), 404
+    
+    name = data.get("name", selection["name"])
+    event_id = data.get("event_id", selection["event_id"])
+    price = data.get("price", selection["price"])
+    active = data.get("active", selection["active"])
+    outcome = data.get("outcome", selection["outcome"])
+
+    cur.execute("UPDATE selections SET name = ?, event_id = ?, price = ? , active = ?, outcome = ? WHERE id = ?", 
+                (name , event_id , price , active , outcome, selection_id ))
+    conn.commit()
+    return jsonify({"updated": cur.rowcount}) 
+
+
+
+
+    # cur.execute("""UPDATE selections SET name = ?, event_id = ?, price = ?, active = ?, outcome = ? WHERE id = ?""",
+    #             (data['name'], data['event_id'], data['price'], data['active'], data['outcome'], selection_id))
+    # conn.commit()
+    # return jsonify({"updated": cur.rowcount})
 
 if __name__ == "__main__":
     app.run(debug=True,port=8000)
