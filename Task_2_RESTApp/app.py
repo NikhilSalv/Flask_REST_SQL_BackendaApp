@@ -192,11 +192,12 @@ SELECTION APIs
 @app.route('/selections', methods=['POST'])
 def create_selection():
     data = request.json
+    formatted_price = round(float(data['price']), 2) 
     conn = get_db()
     cur = conn.cursor()
     cur.execute("""INSERT INTO selections (name, event_id, price, active, outcome)
                    VALUES (?, ?, ?, ?, ?)""",
-                (data['name'], data['event_id'], data['price'], data['active'], data['outcome']))
+                (data['name'], data['event_id'], formatted_price, data['active'], data['outcome']))
     conn.commit()
     return jsonify({"id": cur.lastrowid}), 201
 
@@ -249,15 +250,13 @@ def update_selection(selection_id):
     active = data.get("active", selection["active"])
     outcome = data.get("outcome", selection["outcome"])
 
+    price = round(float(price), 2) if price is not None else selection["price"]
+
     cur.execute("UPDATE selections SET name = ?, event_id = ?, price = ? , active = ?, outcome = ? WHERE id = ?", 
                 (name , event_id , price , active , outcome, selection_id ))
     conn.commit()
     return jsonify({"updated": cur.rowcount}) 
 
-    # cur.execute("""UPDATE selections SET name = ?, event_id = ?, price = ?, active = ?, outcome = ? WHERE id = ?""",
-    #             (data['name'], data['event_id'], data['price'], data['active'], data['outcome'], selection_id))
-    # conn.commit()
-    # return jsonify({"updated": cur.rowcount})
 
 if __name__ == "__main__":
     app.run(debug=True,port=8000)
