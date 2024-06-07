@@ -1,6 +1,6 @@
 from flask import Flask, request, jsonify
 import sqlite3
-from datetime import datetime
+from datetime import datetime, timezone
 
 
 app = Flask(__name__)
@@ -87,15 +87,19 @@ def update_sport(sport_id):
 """
 EVENTS APIs
 """
-
+@app.route('/events', methods=['POST'])
 def create_event():
     data = request.json
     conn = get_db()
     cur = conn.cursor()
-    cur.execute("""INSERT INTO events (name, slug, active, type, sport_id, status, scheduled_start)
-                   VALUES (?, ?, ?, ?, ?, ?, ?)""",
+    actual_start = None
+    if data['status'] == "Started":
+        current_time_utc = datetime.now(timezone.utc)
+        actual_start = current_time_utc.strftime('%Y-%m-%dT%H:%M:%SZ')
+    cur.execute("""INSERT INTO events (name, slug, active, type, sport_id, status, scheduled_start,actual_start)
+                   VALUES (?, ?, ?, ?, ?, ?, ?, ?)""",
                 (data['name'], data['slug'], data['active'], data['type'], data['sport_id'],
-                 data['status'], data['scheduled_start']))
+                 data['status'], data['scheduled_start'], actual_start))
     conn.commit()
     return jsonify({"id": cur.lastrowid}), 201
 
@@ -167,7 +171,10 @@ def update_event(event_id):
     type = data.get('type', event['type'])
     status = data.get('status', event['status'])
     scheduled_start = data.get('scheduled_start', event['scheduled_start'])
-    actual_start = data.get('actual_start', event['actual_start'])
+    actual_start = None
+    if data['status'] == "Started":
+        current_time_utc = datetime.now(timezone.utc)
+        actual_start = current_time_utc.strftime('%Y-%m-%dT%H:%M:%SZ')
 
   
 
@@ -246,9 +253,6 @@ def update_selection(selection_id):
                 (name , event_id , price , active , outcome, selection_id ))
     conn.commit()
     return jsonify({"updated": cur.rowcount}) 
-
-
-
 
     # cur.execute("""UPDATE selections SET name = ?, event_id = ?, price = ?, active = ?, outcome = ? WHERE id = ?""",
     #             (data['name'], data['event_id'], data['price'], data['active'], data['outcome'], selection_id))
