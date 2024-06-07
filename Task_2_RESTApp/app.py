@@ -63,9 +63,21 @@ def update_sport(sport_id):
     data = request.json
     conn = get_db()
     cur = conn.cursor()
+    cur.execute("SELECT name, slug, active FROM sports WHERE id = ?", (sport_id,))
+    sport = cur.fetchone()
+    if not sport:
+        return jsonify({"error": "Sport not found"}), 404
+
+    # Prepare the updated values, using the existing ones if not provided
+    name = data.get('name', sport['name'])
+    slug = data.get('slug', sport['slug'])
+    active = data.get('active', sport['active'])
+
+    # Update the record
     cur.execute("UPDATE sports SET name = ?, slug = ?, active = ? WHERE id = ?",
-                (data['name'], data['slug'], data['active'], sport_id))
+                (name, slug, active, sport_id))
     conn.commit()
+
     return jsonify({"updated": cur.rowcount})
 
 if __name__ == "__main__":
