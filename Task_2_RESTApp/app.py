@@ -101,6 +101,11 @@ def create_event():
                 (data['name'], data['slug'], data['active'], data['type'], data['sport_id'],
                  data['status'], data['scheduled_start'], actual_start))
     conn.commit()
+    cur.execute("SELECT COUNT(*) FROM events WHERE sport_id = ? AND active = ?", (data['sport_id'], 1))
+    active_events_count = cur.fetchone()[0]
+    if active_events_count == 0:
+        cur.execute("UPDATE sports SET active = ? WHERE id = ?", (0, data['sport_id']))
+        conn.commit()
     return jsonify({"id": cur.lastrowid}), 201
 
 @app.route('/events', methods=['GET'])
@@ -169,19 +174,25 @@ def update_event(event_id):
     slug = data.get('slug', event['slug'])
     active = data.get('active', event['active'])
     type = data.get('type', event['type'])
+    sport_id = data.get('sport_id', event['sport_id'])
     status = data.get('status', event['status'])
     scheduled_start = data.get('scheduled_start', event['scheduled_start'])
     actual_start = None
-    if data['status'] == "Started":
+    if status == "Started":
         current_time_utc = datetime.now(timezone.utc)
         actual_start = current_time_utc.strftime('%Y-%m-%dT%H:%M:%SZ')
 
   
 
     # Update the record
-    cur.execute("UPDATE events SET name = ?, slug = ?, active = ?, type = ?, status = ?, scheduled_start = ?, actual_start = ? WHERE id = ?",
-                (name, slug, active,type, status, scheduled_start, actual_start, event_id))
+    cur.execute("UPDATE events SET name = ?, slug = ?, active = ?, type = ?, sport_id = ?, status = ?, scheduled_start = ?, actual_start = ? WHERE id = ?",
+                (name, slug, active,type, sport_id, status, scheduled_start, actual_start, event_id))
     conn.commit()
+    cur.execute("SELECT COUNT(*) FROM events WHERE sport_id = ? AND active = ?", (sport_id, 1))
+    active_events_count = cur.fetchone()[0]
+    if active_events_count == 0:
+        cur.execute("UPDATE sports SET active = ? WHERE id = ?", (0, sport_id))
+        conn.commit()
 
     return jsonify({"updated": cur.rowcount})
 
@@ -199,6 +210,13 @@ def create_selection():
                    VALUES (?, ?, ?, ?, ?)""",
                 (data['name'], data['event_id'], formatted_price, data['active'], data['outcome']))
     conn.commit()
+
+    cur.execute("SELECT COUNT(*) FROM selections WHERE event_id = ? AND active = ?", (data['event_id'], 1))
+    active_selection_count = cur.fetchone()[0]
+    if active_selection_count == 0:
+        cur.execute("UPDATE events SET active = ? WHERE id = ?", (0, data['event_id']))
+        conn.commit()
+
     return jsonify({"id": cur.lastrowid}), 201
 
 
@@ -255,6 +273,12 @@ def update_selection(selection_id):
     cur.execute("UPDATE selections SET name = ?, event_id = ?, price = ? , active = ?, outcome = ? WHERE id = ?", 
                 (name , event_id , price , active , outcome, selection_id ))
     conn.commit()
+    cur.execute("SELECT COUNT(*) FROM selections WHERE event_id = ? AND active = ?", (event_id, 1))
+    active_selection_count = cur.fetchone()[0]
+    if active_selection_count == 0:
+        cur.execute("UPDATE events SET active = ? WHERE id = ?", (0, event_id))
+        conn.commit()
+
     return jsonify({"updated": cur.rowcount}) 
 
 
