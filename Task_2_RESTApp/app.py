@@ -93,12 +93,13 @@ def create_event():
     conn = get_db()
     cur = conn.cursor()
     actual_start = None
+    default_value = 0
     if data['status'] == "Started":
         current_time_utc = datetime.now(timezone.utc)
         actual_start = current_time_utc.strftime('%Y-%m-%dT%H:%M:%SZ')
     cur.execute("""INSERT INTO events (name, slug, active, type, sport_id, status, scheduled_start,actual_start)
                    VALUES (?, ?, ?, ?, ?, ?, ?, ?)""",
-                (data['name'], data['slug'], data['active'], data['type'], data['sport_id'],
+                (data['name'], data['slug'], default_value, data['type'], data['sport_id'],
                  data['status'], data['scheduled_start'], actual_start))
     conn.commit()
     cur.execute("SELECT COUNT(*) FROM events WHERE sport_id = ? AND active = ?", (data['sport_id'], 1))
