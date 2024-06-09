@@ -1,6 +1,8 @@
 from flask import Flask, request, jsonify
 import sqlite3
 from datetime import datetime, timezone
+from dateutil import parser
+import pytz
 
 
 app = Flask(__name__)
@@ -161,6 +163,31 @@ def get_events():
     if 'sport_id' in request.args:
         filters.append("sport_id = ?")
         params.append(request.args['sport_id'])
+
+    if 'start_time' in request.args and 'end_time' in request.args and 'timezone' in request.args:
+        try:
+            start_time_str = request.args['start_time']
+            end_time_str = request.args['end_time']
+            timezone_str = request.args['timezone']
+            
+            # Parse the provided times and timezone
+            local_tz = pytz.timezone(timezone_str)
+            start_time_local = parser.parse(start_time_str)
+            end_time_local = parser.parse(end_time_str)
+
+            start_time_local = local_tz.localize(start_time_local)
+            end_time_local = local_tz.localize(end_time_local)
+
+            # Convert to UTC
+            start_time_utc = start_time_local.astimezone(pytz.utc)
+            end_time_utc = end_time_local.astimezone(pytz.utc)
+
+            print("Start Time UTC : " , start_time_utc, "TIMEZONE string : ", timezone_str, "Local tz : ", local_tz)
+            
+            filters.append("scheduled_start BETWEEN ? AND ?")
+            params.extend([start_time_utc.isoformat(), end_time_utc.isoformat()])
+        except Exception as e:
+            return jsonify({"error": str(e)}), 400
     
     if filters:
         query += " WHERE " + " AND ".join(filters)
