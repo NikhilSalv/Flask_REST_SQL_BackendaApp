@@ -31,17 +31,29 @@ def get_sports():
     filters = []
     params = []
 
+    if 'threshold' in request.args:
+        try:
+            threshold = int(request.args['threshold'])
+        except ValueError:
+            print("Invalid threshold value")
+            threshold = 0
+
+        # If a threshold is provided, add it to the filters
+        filters.append("(SELECT COUNT(*) FROM events WHERE sports.id = events.sport_id AND active = 1) > ?")
+        params.append(threshold)
+
     if 'name' in request.args:
         filters.append("name LIKE ?")
         params.append(f"%{request.args['name']}%")
-    
+
     if 'active' in request.args:
-        filters.append("active = ?")
+        filters.append("active = ?") 
         params.append(request.args['active'])
-    
+
     if filters:
+        # Combine all filters with the AND clause
         query += " WHERE " + " AND ".join(filters)
-    
+
     conn = get_db()
     cur = conn.cursor()
     cur.execute(query, params)
