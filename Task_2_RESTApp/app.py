@@ -240,6 +240,9 @@ def create_selection():
     if active_selection_count == 0:
         cur.execute("UPDATE events SET active = ? WHERE id = ?", (0, data['event_id']))
         conn.commit()
+    else:
+        cur.execute("UPDATE events SET active = ? WHERE id = ?", (1, data['event_id']))
+        conn.commit()
 
     return jsonify({"id": cur.lastrowid}), 201
 
@@ -301,6 +304,9 @@ def update_selection(selection_id):
     active_selection_count = cur.fetchone()[0]
     if active_selection_count == 0:
         cur.execute("UPDATE events SET active = ? WHERE id = ?", (0, event_id))
+        conn.commit()
+    else:
+        cur.execute("UPDATE events SET active = ? WHERE id = ?", (1, event_id))
         conn.commit()
 
     return jsonify({"updated": cur.rowcount}) 
