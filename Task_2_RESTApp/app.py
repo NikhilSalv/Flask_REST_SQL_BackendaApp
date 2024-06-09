@@ -127,6 +127,17 @@ def get_events():
     filters = []
     params = []
 
+    if 'threshold' in request.args:
+        try:
+            threshold = int(request.args['threshold'])
+        except ValueError:
+            print("Invalid threshold value")
+            threshold = 0
+
+        # If a threshold is provided, add it to the filters
+        filters.append("(SELECT COUNT(*) FROM selections WHERE events.id = selections.event_id AND selections.active = 1) > ?")
+        params.append(threshold)
+
     if 'name' in request.args:
         filters.append("name LIKE ?")
         params.append(f"%{request.args['name']}%")
