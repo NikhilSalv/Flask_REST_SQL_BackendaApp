@@ -119,6 +119,10 @@ def create_event():
     if active_events_count == 0:
         cur.execute("UPDATE sports SET active = ? WHERE id = ?", (0, data['sport_id']))
         conn.commit()
+
+    else:
+        cur.execute("UPDATE sports SET active = ? WHERE id = ?", (1, data['sport_id']))
+        conn.commit()
     return jsonify({"id": cur.lastrowid}), 201
 
 @app.route('/events', methods=['GET'])
@@ -216,6 +220,9 @@ def update_event(event_id):
     active_events_count = cur.fetchone()[0]
     if active_events_count == 0:
         cur.execute("UPDATE sports SET active = ? WHERE id = ?", (0, sport_id))
+        conn.commit()
+    else:
+        cur.execute("UPDATE sports SET active = ? WHERE id = ?", (1, sport_id))
         conn.commit()
 
     return jsonify({"updated": cur.rowcount})
