@@ -173,7 +173,7 @@ def update_event(event_id):
 
     name = data.get('name', event['name'])
     slug = data.get('slug', event['slug'])
-    active = data.get('active', event['active'])
+    active = event['active']
     type = data.get('type', event['type'])
     sport_id = data.get('sport_id', event['sport_id'])
     status = data.get('status', event['status'])
