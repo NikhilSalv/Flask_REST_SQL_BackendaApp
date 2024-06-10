@@ -111,8 +111,9 @@ def get_data():
     return jsonify([dict(row) for row in data])
 
 """
-CODE REFACTORED : 
+CODE REFACTORED : Sigle route for Search operations in Sports OR Events with slug
 """
+
 @app.route('/<string:type>/<string:slug>', methods=['GET'])
 def get_data_by_slug(type, slug):
     valid_types = ['sports', 'events']
@@ -132,20 +133,76 @@ def get_data_by_slug(type, slug):
     else:
         return jsonify({"error": f"{type[:-1].capitalize()} not found"}), 404
 
+"""
+CODE REFACTORED  : Single Route for all entities to create data
+"""
+
+@app.route('/create', methods=['POST'])
+def create_data():
+    data = request.json
+    entity_type = data.get('entity_type')
+
+    valid_types = ['sports', 'events', 'selections']
+    if entity_type not in valid_types:
+        return jsonify({"error": "Invalid type parameter"}), 400
+
+    conn = get_db()
+    cur = conn.cursor()
+    
+    if entity_type == 'sports':
+        cur.execute("INSERT INTO sports (name, slug, active) VALUES (?, ?, ?)",
+                    (data['name'], data['slug'], data['active']))
+        conn.commit()
+        return jsonify({"id": cur.lastrowid}), 201
+
+    elif entity_type == 'events':
+        actual_start = None
+        default_value = 0
+        if data['status'] == "Started":
+            current_time_utc = datetime.now(timezone.utc)
+            actual_start = current_time_utc.strftime('%Y-%m-%dT%H:%M:%SZ')
+        
+        cur.execute("""INSERT INTO events (name, slug, active, type, sport_id, status, scheduled_start, actual_start)
+                       VALUES (?, ?, ?, ?, ?, ?, ?, ?)""",
+                    (data['name'], data['slug'], default_value, data['type'], data['sport_id'],
+                     data['status'], data['scheduled_start'], actual_start))
+        conn.commit()
+
+        cur.execute("SELECT COUNT(*) FROM events WHERE sport_id = ? AND active = ?", (data['sport_id'], 1))
+        active_events_count = cur.fetchone()[0]
+        cur.execute("UPDATE sports SET active = ? WHERE id = ?", (1 if active_events_count > 0 else 0, data['sport_id']))
+        conn.commit()
+
+        return jsonify({"id": cur.lastrowid}), 201
+
+    elif entity_type == 'selections':
+        formatted_price = round(float(data['price']), 2)
+        cur.execute("""INSERT INTO selections (name, event_id, price, active, outcome)
+                       VALUES (?, ?, ?, ?, ?)""",
+                    (data['name'], data['event_id'], formatted_price, data['active'], data['outcome']))
+        conn.commit()
+
+        cur.execute("SELECT COUNT(*) FROM selections WHERE event_id = ? AND active = ?", (data['event_id'], 1))
+        active_selection_count = cur.fetchone()[0]
+        cur.execute("UPDATE events SET active = ? WHERE id = ?", (1 if active_selection_count > 0 else 0, data['event_id']))
+        conn.commit()
+
+        return jsonify({"id": cur.lastrowid}), 201
+
 
 """
 SPORTS APIs
 """
 
-@app.route('/sports', methods=['POST'])
-def create_sport():
-    data = request.json
-    conn = get_db()
-    cur = conn.cursor()
-    cur.execute("INSERT INTO sports (name, slug, active) VALUES (?, ?, ?)",
-                (data['name'], data['slug'], data['active']))
-    conn.commit()
-    return jsonify({"id": cur.lastrowid}), 201
+# @app.route('/sports', methods=['POST'])
+# def create_sport():
+#     data = request.json
+#     conn = get_db()
+#     cur = conn.cursor()
+#     cur.execute("INSERT INTO sports (name, slug, active) VALUES (?, ?, ?)",
+#                 (data['name'], data['slug'], data['active']))
+#     conn.commit()
+#     return jsonify({"id": cur.lastrowid}), 201
 
 
 # @app.route('/sports/<string:slug>', methods=['GET'])
@@ -186,31 +243,31 @@ def update_sport(sport_id):
 """
 EVENTS APIs
 """
-@app.route('/events', methods=['POST'])
-def create_event():
-    data = request.json
-    conn = get_db()
-    cur = conn.cursor()
-    actual_start = None
-    default_value = 0
-    if data['status'] == "Started":
-        current_time_utc = datetime.now(timezone.utc)
-        actual_start = current_time_utc.strftime('%Y-%m-%dT%H:%M:%SZ')
-    cur.execute("""INSERT INTO events (name, slug, active, type, sport_id, status, scheduled_start,actual_start)
-                   VALUES (?, ?, ?, ?, ?, ?, ?, ?)""",
-                (data['name'], data['slug'], default_value, data['type'], data['sport_id'],
-                 data['status'], data['scheduled_start'], actual_start))
-    conn.commit()
-    cur.execute("SELECT COUNT(*) FROM events WHERE sport_id = ? AND active = ?", (data['sport_id'], 1))
-    active_events_count = cur.fetchone()[0]
-    if active_events_count == 0:
-        cur.execute("UPDATE sports SET active = ? WHERE id = ?", (0, data['sport_id']))
-        conn.commit()
+# @app.route('/events', methods=['POST'])
+# def create_event():
+#     data = request.json
+#     conn = get_db()
+#     cur = conn.cursor()
+#     actual_start = None
+#     default_value = 0
+#     if data['status'] == "Started":
+#         current_time_utc = datetime.now(timezone.utc)
+#         actual_start = current_time_utc.strftime('%Y-%m-%dT%H:%M:%SZ')
+#     cur.execute("""INSERT INTO events (name, slug, active, type, sport_id, status, scheduled_start,actual_start)
+#                    VALUES (?, ?, ?, ?, ?, ?, ?, ?)""",
+#                 (data['name'], data['slug'], default_value, data['type'], data['sport_id'],
+#                  data['status'], data['scheduled_start'], actual_start))
+#     conn.commit()
+#     cur.execute("SELECT COUNT(*) FROM events WHERE sport_id = ? AND active = ?", (data['sport_id'], 1))
+#     active_events_count = cur.fetchone()[0]
+#     if active_events_count == 0:
+#         cur.execute("UPDATE sports SET active = ? WHERE id = ?", (0, data['sport_id']))
+#         conn.commit()
 
-    else:
-        cur.execute("UPDATE sports SET active = ? WHERE id = ?", (1, data['sport_id']))
-        conn.commit()
-    return jsonify({"id": cur.lastrowid}), 201
+#     else:
+#         cur.execute("UPDATE sports SET active = ? WHERE id = ?", (1, data['sport_id']))
+#         conn.commit()
+#     return jsonify({"id": cur.lastrowid}), 201
 
 
 # @app.route('/events/<string:slug>', methods=['GET'])
@@ -272,27 +329,27 @@ def update_event(event_id):
 """
 SELECTION APIs
 """
-@app.route('/selections', methods=['POST'])
-def create_selection():
-    data = request.json
-    formatted_price = round(float(data['price']), 2) 
-    conn = get_db()
-    cur = conn.cursor()
-    cur.execute("""INSERT INTO selections (name, event_id, price, active, outcome)
-                   VALUES (?, ?, ?, ?, ?)""",
-                (data['name'], data['event_id'], formatted_price, data['active'], data['outcome']))
-    conn.commit()
+# @app.route('/selections', methods=['POST'])
+# def create_selection():
+#     data = request.json
+#     formatted_price = round(float(data['price']), 2) 
+#     conn = get_db()
+#     cur = conn.cursor()
+#     cur.execute("""INSERT INTO selections (name, event_id, price, active, outcome)
+#                    VALUES (?, ?, ?, ?, ?)""",
+#                 (data['name'], data['event_id'], formatted_price, data['active'], data['outcome']))
+#     conn.commit()
 
-    cur.execute("SELECT COUNT(*) FROM selections WHERE event_id = ? AND active = ?", (data['event_id'], 1))
-    active_selection_count = cur.fetchone()[0]
-    if active_selection_count == 0:
-        cur.execute("UPDATE events SET active = ? WHERE id = ?", (0, data['event_id']))
-        conn.commit()
-    else:
-        cur.execute("UPDATE events SET active = ? WHERE id = ?", (1, data['event_id']))
-        conn.commit()
+#     cur.execute("SELECT COUNT(*) FROM selections WHERE event_id = ? AND active = ?", (data['event_id'], 1))
+#     active_selection_count = cur.fetchone()[0]
+#     if active_selection_count == 0:
+#         cur.execute("UPDATE events SET active = ? WHERE id = ?", (0, data['event_id']))
+#         conn.commit()
+#     else:
+#         cur.execute("UPDATE events SET active = ? WHERE id = ?", (1, data['event_id']))
+#         conn.commit()
 
-    return jsonify({"id": cur.lastrowid}), 201
+#     return jsonify({"id": cur.lastrowid}), 201
 
 
 # @app.route('/selections', methods=['GET'])
