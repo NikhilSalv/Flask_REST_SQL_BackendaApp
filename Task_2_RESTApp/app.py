@@ -1,17 +1,46 @@
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, send_from_directory
 import sqlite3
 from datetime import datetime, timezone
 from dateutil import parser
 import pytz
+# from flask_swagger_ui import get_swaggerui_blueprint
+# from flask_restplus import Api, Resource, fields
+# from werkzeug import cached_property
 
 
 app = Flask(__name__)
+
+# api = Api(app, version='1.0', title='My API', description='A simple API')
+# ns = api.namespace('main', description='Main operations')
+
+# hello_model = api.model('Hello', {
+#     'message': fields.String(required=True, description='The hello message')
+# })
+
+
+### Swagger specific ###
+# SWAGGER_URL = '/swagger'
+# API_URL = '/static/swagger.yaml'
+# SWAGGERUI_BLUEPRINT = get_swaggerui_blueprint(
+#     SWAGGER_URL,
+#     API_URL,
+#     config={
+#         'app_name': "Simple API"
+#     }
+# )
+# app.register_blueprint(SWAGGERUI_BLUEPRINT, url_prefix=SWAGGER_URL)
+
 DATABASE = 'sportsbook.db'
 
 def get_db():
     conn = sqlite3.connect(DATABASE)
     conn.row_factory = sqlite3.Row
     return conn
+
+@app.route('/static/<path:path>')
+def send_static(path):
+    return send_from_directory('static', path)
+
 
 """ CODE REFACTORED :  Single Search route for search operations in Sports, Events and Selections"""
 

@@ -8,3 +8,4 @@ python-dateutil==2.9.0.post0
 pytz==2024.1
 six==1.16.0
 Werkzeug==3.0.3
+flask-swagger-ui==4.11.1
