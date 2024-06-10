@@ -191,230 +191,95 @@ def create_data():
 
 
 """
-SPORTS APIs
+SINGLE ROUTE FOR UPDATE : Three routes merged to a single route to update data
 """
 
-# @app.route('/sports', methods=['POST'])
-# def create_sport():
-#     data = request.json
-#     conn = get_db()
-#     cur = conn.cursor()
-#     cur.execute("INSERT INTO sports (name, slug, active) VALUES (?, ?, ?)",
-#                 (data['name'], data['slug'], data['active']))
-#     conn.commit()
-#     return jsonify({"id": cur.lastrowid}), 201
+@app.route('/update/<string:type>/<int:id>', methods=['PUT'])
+def update_data(type, id):
+    valid_types = ['sports', 'events', 'selections']
+    
+    if type not in valid_types:
+        return jsonify({"error": "Invalid type parameter"}), 400
 
-
-# @app.route('/sports/<string:slug>', methods=['GET'])
-# def get_sports_slug(slug):
-#     conn = get_db()
-#     cur = conn.cursor()
-#     cur.execute("SELECT * FROM sports WHERE slug= ?", (slug,))
-
-#     sport = cur.fetchone()
-
-#     if sport:
-#         return jsonify(dict(sport))
-#     else:
-#         return jsonify({"error": "Sport not found"}), 404
-
-@app.route("/sports/<int:sport_id>", methods=["PUT"])
-def update_sport(sport_id):
     data = request.json
     conn = get_db()
     cur = conn.cursor()
-    cur.execute("SELECT * FROM sports WHERE id = ?", (sport_id,))
-    sport = cur.fetchone()
-    if not sport:
-        return jsonify({"error": "Sport not found"}), 404
 
-    # Prepare the updated values, using the existing ones if not provided
-    name = data.get('name', sport['name'])
-    slug = data.get('slug', sport['slug'])
-    active = data.get('active', sport['active'])
+    if type == 'sports':
+        cur.execute("SELECT * FROM sports WHERE id = ?", (id,))
+        sport = cur.fetchone()
+        if not sport:
+            return jsonify({"error": "Sport not found"}), 404
 
-    # Update the record
-    cur.execute("UPDATE sports SET name = ?, slug = ?, active = ? WHERE id = ?",
-                (name, slug, active, sport_id))
-    conn.commit()
+        # Prepare the updated values, using the existing ones if not provided
+        name = data.get('name', sport['name'])
+        slug = data.get('slug', sport['slug'])
+        active = data.get('active', sport['active'])
 
-    return jsonify({"updated": cur.rowcount})
-
-"""
-EVENTS APIs
-"""
-# @app.route('/events', methods=['POST'])
-# def create_event():
-#     data = request.json
-#     conn = get_db()
-#     cur = conn.cursor()
-#     actual_start = None
-#     default_value = 0
-#     if data['status'] == "Started":
-#         current_time_utc = datetime.now(timezone.utc)
-#         actual_start = current_time_utc.strftime('%Y-%m-%dT%H:%M:%SZ')
-#     cur.execute("""INSERT INTO events (name, slug, active, type, sport_id, status, scheduled_start,actual_start)
-#                    VALUES (?, ?, ?, ?, ?, ?, ?, ?)""",
-#                 (data['name'], data['slug'], default_value, data['type'], data['sport_id'],
-#                  data['status'], data['scheduled_start'], actual_start))
-#     conn.commit()
-#     cur.execute("SELECT COUNT(*) FROM events WHERE sport_id = ? AND active = ?", (data['sport_id'], 1))
-#     active_events_count = cur.fetchone()[0]
-#     if active_events_count == 0:
-#         cur.execute("UPDATE sports SET active = ? WHERE id = ?", (0, data['sport_id']))
-#         conn.commit()
-
-#     else:
-#         cur.execute("UPDATE sports SET active = ? WHERE id = ?", (1, data['sport_id']))
-#         conn.commit()
-#     return jsonify({"id": cur.lastrowid}), 201
-
-
-# @app.route('/events/<string:slug>', methods=['GET'])
-# def get_events_slug(slug):
-#     conn = get_db()
-#     cur = conn.cursor()
-#     cur.execute("SELECT * FROM events WHERE slug= ?", (slug,))
-
-#     sport = cur.fetchone()
-
-#     if sport:
-#         return jsonify(dict(sport))
-#     else:
-#         return jsonify({"error": "Event not found"}), 404
-
-
-@app.route('/events/<int:event_id>', methods=['PUT'])
-def update_event(event_id):
-    data = request.json
-    conn = get_db()
-    cur = conn.cursor()
-    cur.execute("SELECT * FROM events WHERE id = ?", (event_id,))
-    event = cur.fetchone()
-    if not event:
-        return jsonify({"error": "Event not found"}), 404
-
-    # Prepare the updated values, using the existing ones if not provided
-
-    name = data.get('name', event['name'])
-    slug = data.get('slug', event['slug'])
-    active = event['active']
-    type = data.get('type', event['type'])
-    sport_id = data.get('sport_id', event['sport_id'])
-    status = data.get('status', event['status'])
-    scheduled_start = data.get('scheduled_start', event['scheduled_start'])
-    actual_start = None
-    if status == "Started":
-        current_time_utc = datetime.now(timezone.utc)
-        actual_start = current_time_utc.strftime('%Y-%m-%dT%H:%M:%SZ')
-
-  
-
-    # Update the record
-    cur.execute("UPDATE events SET name = ?, slug = ?, active = ?, type = ?, sport_id = ?, status = ?, scheduled_start = ?, actual_start = ? WHERE id = ?",
-                (name, slug, active,type, sport_id, status, scheduled_start, actual_start, event_id))
-    conn.commit()
-    cur.execute("SELECT COUNT(*) FROM events WHERE sport_id = ? AND active = ?", (sport_id, 1))
-    active_events_count = cur.fetchone()[0]
-    if active_events_count == 0:
-        cur.execute("UPDATE sports SET active = ? WHERE id = ?", (0, sport_id))
-        conn.commit()
-    else:
-        cur.execute("UPDATE sports SET active = ? WHERE id = ?", (1, sport_id))
+        # Update the record
+        cur.execute("UPDATE sports SET name = ?, slug = ?, active = ? WHERE id = ?",
+                    (name, slug, active, id))
         conn.commit()
 
-    return jsonify({"updated": cur.rowcount})
+        return jsonify({"updated": cur.rowcount})
 
+    elif type == 'events':
+        cur.execute("SELECT * FROM events WHERE id = ?", (id,))
+        event = cur.fetchone()
+        if not event:
+            return jsonify({"error": "Event not found"}), 404
 
-"""
-SELECTION APIs
-"""
-# @app.route('/selections', methods=['POST'])
-# def create_selection():
-#     data = request.json
-#     formatted_price = round(float(data['price']), 2) 
-#     conn = get_db()
-#     cur = conn.cursor()
-#     cur.execute("""INSERT INTO selections (name, event_id, price, active, outcome)
-#                    VALUES (?, ?, ?, ?, ?)""",
-#                 (data['name'], data['event_id'], formatted_price, data['active'], data['outcome']))
-#     conn.commit()
+        # Prepare the updated values, using the existing ones if not provided
+        name = data.get('name', event['name'])
+        slug = data.get('slug', event['slug'])
+        active = event['active']
+        event_type = data.get('type', event['type'])
+        sport_id = data.get('sport_id', event['sport_id'])
+        status = data.get('status', event['status'])
+        scheduled_start = data.get('scheduled_start', event['scheduled_start'])
+        actual_start = event['actual_start']
+        if status == "Started":
+            current_time_utc = datetime.now(timezone.utc)
+            actual_start = current_time_utc.strftime('%Y-%m-%dT%H:%M:%SZ')
 
-#     cur.execute("SELECT COUNT(*) FROM selections WHERE event_id = ? AND active = ?", (data['event_id'], 1))
-#     active_selection_count = cur.fetchone()[0]
-#     if active_selection_count == 0:
-#         cur.execute("UPDATE events SET active = ? WHERE id = ?", (0, data['event_id']))
-#         conn.commit()
-#     else:
-#         cur.execute("UPDATE events SET active = ? WHERE id = ?", (1, data['event_id']))
-#         conn.commit()
-
-#     return jsonify({"id": cur.lastrowid}), 201
-
-
-# @app.route('/selections', methods=['GET'])
-# def get_selections():
-#     query = "SELECT * FROM selections"
-#     filters = []
-#     params = []
-
-#     if 'name' in request.args:
-#         filters.append("name LIKE ?")
-#         params.append(f"%{request.args['name']}%")
-    
-#     if 'active' in request.args:
-#         filters.append("active = ?")
-#         params.append(request.args['active'])
-    
-#     if 'outcome' in request.args:
-#         filters.append("outcome = ?")
-#         params.append(request.args['outcome'])
-    
-#     if 'event_id' in request.args:
-#         filters.append("event_id = ?")
-#         params.append(request.args['event_id'])
-    
-#     if filters:
-#         query += " WHERE " + " AND ".join(filters)
-    
-#     conn = get_db()
-#     cur = conn.cursor()
-#     cur.execute(query, params)
-#     selections = cur.fetchall()
-#     return jsonify([dict(row) for row in selections])
-
-@app.route('/selections/<int:selection_id>', methods=['PUT'])
-def update_selection(selection_id):
-    data = request.json
-    conn = get_db()
-    cur = conn.cursor()
-    cur.execute("SELECT * FROM selections WHERE id = ?", (selection_id,))
-    selection = cur.fetchone()
-
-    if not selection:
-        return jsonify({"error": "Selection not found"}), 404
-    
-    name = data.get("name", selection["name"])
-    event_id = data.get("event_id", selection["event_id"])
-    price = data.get("price", selection["price"])
-    active = data.get("active", selection["active"])
-    outcome = data.get("outcome", selection["outcome"])
-
-    price = round(float(price), 2) if price is not None else selection["price"]
-
-    cur.execute("UPDATE selections SET name = ?, event_id = ?, price = ? , active = ?, outcome = ? WHERE id = ?", 
-                (name , event_id , price , active , outcome, selection_id ))
-    conn.commit()
-    cur.execute("SELECT COUNT(*) FROM selections WHERE event_id = ? AND active = ?", (event_id, 1))
-    active_selection_count = cur.fetchone()[0]
-    if active_selection_count == 0:
-        cur.execute("UPDATE events SET active = ? WHERE id = ?", (0, event_id))
-        conn.commit()
-    else:
-        cur.execute("UPDATE events SET active = ? WHERE id = ?", (1, event_id))
+        # Update the record
+        cur.execute("""UPDATE events SET name = ?, slug = ?, active = ?, type = ?, sport_id = ?, 
+                       status = ?, scheduled_start = ?, actual_start = ? WHERE id = ?""",
+                    (name, slug, active, event_type, sport_id, status, scheduled_start, actual_start, id))
         conn.commit()
 
-    return jsonify({"updated": cur.rowcount}) 
+        cur.execute("SELECT COUNT(*) FROM events WHERE sport_id = ? AND active = ?", (sport_id, 1))
+        active_events_count = cur.fetchone()[0]
+        cur.execute("UPDATE sports SET active = ? WHERE id = ?", (1 if active_events_count > 0 else 0, sport_id))
+        conn.commit()
+
+        return jsonify({"updated": cur.rowcount})
+
+    elif type == 'selections':
+        cur.execute("SELECT * FROM selections WHERE id = ?", (id,))
+        selection = cur.fetchone()
+
+        if not selection:
+            return jsonify({"error": "Selection not found"}), 404
+        
+        name = data.get("name", selection["name"])
+        event_id = data.get("event_id", selection["event_id"])
+        price = data.get("price", selection["price"])
+        active = data.get("active", selection["active"])
+        outcome = data.get("outcome", selection["outcome"])
+
+        price = round(float(price), 2) if price is not None else selection["price"]
+
+        cur.execute("UPDATE selections SET name = ?, event_id = ?, price = ? , active = ?, outcome = ? WHERE id = ?", 
+                    (name, event_id, price, active, outcome, id))
+        conn.commit()
+
+        cur.execute("SELECT COUNT(*) FROM selections WHERE event_id = ? AND active = ?", (event_id, 1))
+        active_selection_count = cur.fetchone()[0]
+        cur.execute("UPDATE events SET active = ? WHERE id = ?", (1 if active_selection_count > 0 else 0, event_id))
+        conn.commit()
+
+        return jsonify({"updated": cur.rowcount})
 
 
 if __name__ == "__main__":
