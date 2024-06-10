@@ -13,7 +13,7 @@ def get_db():
     conn.row_factory = sqlite3.Row
     return conn
 
-""" CODE REFACTORED :  Single API for search operations in Sports, Events and Selections"""
+""" CODE REFACTORED :  Single Search route for search operations in Sports, Events and Selections"""
 
 @app.route('/getdata', methods=['GET'])
 def get_data():
@@ -110,6 +110,27 @@ def get_data():
     data = cur.fetchall()
     return jsonify([dict(row) for row in data])
 
+"""
+CODE REFACTORED : 
+"""
+@app.route('/<string:type>/<string:slug>', methods=['GET'])
+def get_data_by_slug(type, slug):
+    valid_types = ['sports', 'events']
+    
+    if type not in valid_types:
+        return jsonify({"error": "Invalid type parameter"}), 400
+
+    conn = get_db()
+    cur = conn.cursor()
+    query = f"SELECT * FROM {type} WHERE slug= ?"
+    cur.execute(query, (slug,))
+
+    data = cur.fetchone()
+
+    if data:
+        return jsonify(dict(data))
+    else:
+        return jsonify({"error": f"{type[:-1].capitalize()} not found"}), 404
 
 
 """
@@ -126,54 +147,19 @@ def create_sport():
     conn.commit()
     return jsonify({"id": cur.lastrowid}), 201
 
-# @app.route('/sports', methods=['GET'])
-# def get_sports():
-#     query = "SELECT * FROM sports"
-#     filters = []
-#     params = []
 
-#     if 'threshold' in request.args:
-#         try:
-#             threshold = int(request.args['threshold'])
-#         except ValueError:
-#             print("Invalid threshold value")
-#             threshold = 0
-
-#         # If a threshold is provided, add it to the filters
-#         filters.append("(SELECT COUNT(*) FROM events WHERE sports.id = events.sport_id AND active = 1) > ?")
-#         params.append(threshold)
-
-#     if 'name' in request.args:
-#         filters.append("name LIKE ?")
-#         params.append(f"%{request.args['name']}%")
-
-#     if 'active' in request.args:
-#         filters.append("active = ?") 
-#         params.append(request.args['active'])
-
-#     if filters:
-#         # Combine all filters with the AND clause
-#         query += " WHERE " + " AND ".join(filters)
-
+# @app.route('/sports/<string:slug>', methods=['GET'])
+# def get_sports_slug(slug):
 #     conn = get_db()
 #     cur = conn.cursor()
-#     cur.execute(query, params)
-#     sports = cur.fetchall()
-#     return jsonify([dict(row) for row in sports])
+#     cur.execute("SELECT * FROM sports WHERE slug= ?", (slug,))
 
+#     sport = cur.fetchone()
 
-@app.route('/sports/<string:slug>', methods=['GET'])
-def get_sports_slug(slug):
-    conn = get_db()
-    cur = conn.cursor()
-    cur.execute("SELECT * FROM sports WHERE slug= ?", (slug,))
-
-    sport = cur.fetchone()
-
-    if sport:
-        return jsonify(dict(sport))
-    else:
-        return jsonify({"error": "Sport not found"}), 404
+#     if sport:
+#         return jsonify(dict(sport))
+#     else:
+#         return jsonify({"error": "Sport not found"}), 404
 
 @app.route("/sports/<int:sport_id>", methods=["PUT"])
 def update_sport(sport_id):
@@ -226,90 +212,19 @@ def create_event():
         conn.commit()
     return jsonify({"id": cur.lastrowid}), 201
 
-# @app.route('/events', methods=['GET'])
-# def get_events():
-#     query = "SELECT * FROM events"
-#     filters = []
-#     params = []
 
-#     if 'threshold' in request.args:
-#         try:
-#             threshold = int(request.args['threshold'])
-#         except ValueError:
-#             print("Invalid threshold value")
-#             threshold = 0
-
-#         # If a threshold is provided, add it to the filters
-#         filters.append("(SELECT COUNT(*) FROM selections WHERE events.id = selections.event_id AND selections.active = 1) > ?")
-#         params.append(threshold)
-
-#     if 'name' in request.args:
-#         filters.append("name LIKE ?")
-#         params.append(f"%{request.args['name']}%")
-    
-#     if 'active' in request.args:
-#         filters.append("active = ?")
-#         params.append(request.args['active'])
-    
-#     if 'status' in request.args:
-#         filters.append("status = ?")
-#         params.append(request.args['status'])
-    
-#     if 'type' in request.args:
-#         filters.append("type = ?")
-#         params.append(request.args['type'])
-    
-#     if 'sport_id' in request.args:
-#         filters.append("sport_id = ?")
-#         params.append(request.args['sport_id'])
-
-#     if 'start_time' in request.args and 'end_time' in request.args and 'timezone' in request.args:
-#         try:
-#             start_time_str = request.args['start_time']
-#             end_time_str = request.args['end_time']
-#             timezone_str = request.args['timezone']
-            
-#             # Parse the provided times and timezone
-#             local_tz = pytz.timezone(timezone_str)
-#             start_time_local = parser.parse(start_time_str)
-#             end_time_local = parser.parse(end_time_str)
-
-#             start_time_local = local_tz.localize(start_time_local)
-#             end_time_local = local_tz.localize(end_time_local)
-
-#             # Convert to UTC
-#             start_time_utc = start_time_local.astimezone(pytz.utc)
-#             end_time_utc = end_time_local.astimezone(pytz.utc)
-
-#             print("Start Time UTC : " , start_time_utc, "TIMEZONE string : ", timezone_str, "Local tz : ", local_tz)
-            
-#             filters.append("scheduled_start BETWEEN ? AND ?")
-#             params.extend([start_time_utc.isoformat(), end_time_utc.isoformat()])
-#         except Exception as e:
-#             return jsonify({"error": str(e)}), 400
-    
-#     if filters:
-#         query += " WHERE " + " AND ".join(filters)
-    
+# @app.route('/events/<string:slug>', methods=['GET'])
+# def get_events_slug(slug):
 #     conn = get_db()
 #     cur = conn.cursor()
-#     cur.execute(query, params)
-#     events = cur.fetchall()
-#     return jsonify([dict(row) for row in events])
+#     cur.execute("SELECT * FROM events WHERE slug= ?", (slug,))
 
+#     sport = cur.fetchone()
 
-@app.route('/events/<string:slug>', methods=['GET'])
-def get_events_slug(slug):
-    conn = get_db()
-    cur = conn.cursor()
-    cur.execute("SELECT * FROM events WHERE slug= ?", (slug,))
-
-    sport = cur.fetchone()
-
-    if sport:
-        return jsonify(dict(sport))
-    else:
-        return jsonify({"error": "Event not found"}), 404
+#     if sport:
+#         return jsonify(dict(sport))
+#     else:
+#         return jsonify({"error": "Event not found"}), 404
 
 
 @app.route('/events/<int:event_id>', methods=['PUT'])
