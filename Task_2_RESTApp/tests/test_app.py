@@ -21,7 +21,7 @@ def test_get_data_by_slug_sports(client):
     assert response.status_code == 200
 
 def test_get_data_by_slug_events(client):
-    response = client.get('/events/football-match')
+    response = client.get('/events/ipl-final')
     assert response.status_code == 200
 
 def test_get_data_by_slug_invalid_type(client):
@@ -31,8 +31,8 @@ def test_get_data_by_slug_invalid_type(client):
 def test_create_data_sports(client):
     data = {
         "entity_type": "sports",
-        "name": "Tennis",
-        "slug": "tennis",
+        "name": "test_sport",
+        "slug": "test_sport_create",
         "active": 1
     }
     response = client.post('/create', json=data)
@@ -54,11 +54,11 @@ def test_update_data_sports(client):
         "slug": "updated-slug",
         "active": 0
     }
-    response = client.put('/update/sports/1', json=data)
+    response = client.put('/update/sports/9', json=data)
     assert response.status_code == 200
 
     # Close the database connection after the test
-    app.db_connection.close()
+    # app.db_connection.close()
 
 def test_update_data_invalid_type(client):
     data = {
@@ -68,6 +68,3 @@ def test_update_data_invalid_type(client):
     }
     response = client.put('/update/invalid_type/1', json=data)
     assert response.status_code == 400
-
-    # Close the database connection after the test
-    app.db_connection.close()
