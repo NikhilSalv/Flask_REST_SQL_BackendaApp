@@ -111,6 +111,11 @@ Dockerfile:
 
 <img src="https://github.com/NikhilSalv/888_Spectate_Task/blob/main/Screenshots/Docker.png" width="700" alt="AWS Certification">
 
+### Additional features : 
+
+- CSRF Token generation with session token for 5 minutes. 
+- Generate token first before making any non-GET method. Use "/get_csrf_token" url to get the token.
+
 ### Future Implementations  :
 
 - Parameterized queries to prevent SQL Injection
