@@ -3,13 +3,21 @@ import sqlite3
 from datetime import datetime, timezone
 from dateutil import parser
 import pytz
-
+from flask_wtf.csrf import CSRFProtect, generate_csrf
 
 
 app = Flask(__name__)
 
+app.config['SECRET_KEY'] = 'your_secret_key'
+csrf = CSRFProtect(app)
 
 DATABASE = 'sportsbook.db'
+
+@app.route('/get_csrf_token', methods=['GET'])
+def get_csrf_token():
+    csrf_token = generate_csrf()
+    return jsonify({"csrf_token": csrf_token})
+
 
 def get_db():
     conn = sqlite3.connect(DATABASE)
