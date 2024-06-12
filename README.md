@@ -4,6 +4,12 @@
 
 The 888Spectate API provides endpoints for managing sports, events, and selections within a sportsbook product. The API supports creating, retrieving, updating, and deleting these entities, ensuring consistency by automatically deactivating events and sports when all their selections or events are inactive, respectively.
 
+### CSRF Protection
+
+- CSRF Token generation with session token for 5 minutes. 
+- Generate token first before making any non-GET method. Use "/get_csrf_token" url to get the token.
+- Use this token in request headers with POST requests.
+
 ### Database System
 
 The API uses SQLite as its persistent storage. The following entity relationships exist:
@@ -114,7 +120,6 @@ Dockerfile:
 ### Additional features : 
 
 - CSRF Token generation with session token for 5 minutes. 
-- Generate token first before making any non-GET method. Use "/get_csrf_token" url to get the token.
 
 ### Future Implementations  :
 
