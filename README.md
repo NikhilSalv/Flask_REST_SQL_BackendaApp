@@ -131,6 +131,4 @@ Dockerfile:
 
 This documentation outlines the objectives, database schema, REST API endpoints, and Docker setup for the 888Spectate REST API. This setup allows for efficient management of sports, events, and selections within the sportsbook product, ensuring data integrity and ease of use.
 
-#### Aknowledgement 
 
-##### I have truly enjoyed developing this application. Thank you 888Spactate for giving me this opportunity. I am looking forward to contribute my best to the 888 Spectate.
