@@ -4,6 +4,9 @@
 
 The 888Spectate API provides endpoints for managing sports, events, and selections within a sportsbook product. The API supports creating, retrieving, updating, and deleting these entities, ensuring consistency by automatically deactivating events and sports when all their selections or events are inactive, respectively.
 
+![Flask_REST](https://github.com/NikhilSalv/Flask_REST_SQL_BackendaApp/assets/74225565/c57d5f36-25ec-423f-b59d-dd18afb3e695)
+
+
 ### CSRF Protection
 
 - CSRF Token generation with session token for 5 minutes. 
